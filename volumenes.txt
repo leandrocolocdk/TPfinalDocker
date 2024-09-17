@@ -1,0 +1,37 @@
+docker volume create data_vol
+
+
+docker run --rm -v data_vol:/data -v .:/backup alpine tar czf /backup/backup_data_vol.tar.gz -C /data .
+
+
+
+docker run --rm 
+
+-v data_vol:/data  // volumen que se habia creado con los datos  
+
+-v .:/backup 
+alpine tar czf /backup/backup_data_vol.tar.gz -C /data .
+
+
+
+
+
+docker run -it --name contenedor-tpfinal -p 3000:3000 -v vol_tpfinal:/etc/todos/ leandrocolocdk/tpidepba:2.0
+
+prueba de volumenes
+no me estaria funcionando para descomprimir
+17hs
+
+eso tengo en el volumen 
+
+docker run --rm -v data_vol:/data -v .:/backup alpine tar czf /backup/backup_data_vol.tar.gz -C /data .
+docker run --rm -v vol_tpfinal:/data -v .:/backup alpine tar czf /backup/backup_data_vol.tar.gz -C /data .
+
+
+docker volume create restored_vol22
+
+docker run --rm -v restored_vol:/data -v .:/backup alpine sh -c "tar xzf /backup/backup_data_vol.tar.gz -C /data"
+docker run --rm -v restored_vol22:/data -v .:/backup alpine sh -c "tar xzf /backup/backup_data_vol.tar.gz -C /data"
+
+
+docker run -it --name contenedor-tpfinal -p 3000:3000 -v restored_vol22:/etc/todos/ leandrocolocdk/tpidepba:2.0

@@ -1,0 +1,179 @@
+Para construir la imagen ejecutamos en la ubicacion del dockerfile
+docker build -t tp_integrador:1.0 .
+
+para ver cuanto ocupa la imagen buscamos 
+docker images 
+REPOSITORY                    TAG       IMAGE ID       CREATED              SIZE
+tp_integrador                 1.0       edae35dc20cc   About a minute ago   161MB
+
+para correr la imagen creada docker run seguido de la imagen creada y su tag
+docker run tp_integrador:1.0
+
+pero se necesita el puerto asi que le agregamos el parametro -p 
+docker run -d -p 3000:3000 tp_integrador:1.0
+
+
+para detener el contenedor y docker stop y el nombre al azar que se puso
+docker stop  infallible_saha
+
+
+ejecutamos un cambio en la app reconstruimos la imagen y le cambiamos el tag
+docker build -t tp_integrador:2.0 . 
+
+
+docker rm relaxed_lumiere
+
+
+construimos con el cambio 
+docker build -t tp_integrador:2.0 .          
+
+docker run -it --name contenedor-tpfinal -p 3000:3000  tp_integrador:2.0
+ 
+
+docker stop contenedor-tpfinal
+docker rm contenedor-tpfinal
+
+docker images 
+REPOSITORY                    TAG       IMAGE ID       CREATED              SIZE
+
+
+creamos desde dockerhub un nombre de la imagen 
+tpidepba 
+
+luego a nuestra imagen local le cambiamos de tag 
+docker image tag tp_integrador:2.0 leandrocolocdk/tpidepba:2.0
+
+
+docker push leandrocolocdk/tpidepba:2.0
+
+
+PS C:\Users\leandro.suarez\Downloads\TP integrador Docker\docker-integradora> docker login                               
+Log in with your Docker ID or email address to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com/ to create one.
+You can log in with your password or a Personal Access Token (PAT). Using a limited-scope PAT grants better security and is required for organizations using SSO. Learn more at https://docs.docker.com/go/access-tokens/
+
+Username: leandrocolocdk
+Password:
+Login Succeeded
+PS C:\Users\leandro.suarez\Downloads\TP integrador Docker\docker-integradora> docker push leandrocolocdk/tpidepba:2.0
+The push refers to repository [docker.io/leandrocolocdk/tpidepba]
+3df32e202977: Pushed
+079e69615b8e: Pushed
+f42563680e6c: Pushed
+893d354a2c32: Pushed
+63ca1fbb43ae: Mounted from library/alpine
+2.0: digest: sha256:d98b62d8a81b7f89bd002fe9fa3562beb75309b4992ce8bdce247dce75433937 size: 1369
+PS C:\Users\leandro.suarez\Downloads\TP integrador Docker\docker-integradora>
+
+
+la imagen de docker hub subida por nosotros  
+leandrocolocdk/tpidepba:2.0
+
+docker pull leandrocolocdk/tpidepba:2.0
+
+
+
+para poner un volumen a nuestra app 
+docker volume create vol_tpfinal
+
+docker stop contenedor-tpfinal
+docker rm contenedor-tpfinal
+
+docker run -it --name contenedor-tpfinal -p 3000:3000 -v vol_tpfinal:/etc/todos/ leandrocolocdk/tpidepba:2.0
+
+detenemos y borramos el contenedor 
+docker rm contenedor-tpfinal    
+
+para hacer el backup 
+docker run --rm -v data_vol:/data -v .:/backup alpine tar czf /backup/backup_data_vol.tar.gz -C /data .
+en el directorio donde queremos dejar el tar 
+cd volumen_data
+docker run --rm -v vol_tpfinal:/etc/todos/ -v .:/backup leandrocolocdk/tpidepba:2.0 tar czf /backup_data_vol.tar.gz -C /etc/todos/ .
+docker run --rm -v vol_tpfinal:/etc/todos/ -v .volumen_data:/backup leandrocolocdk/tpidepba:2.0 tar czf /backup/backup_data_vol.tar.gz -C /etc/todos/ .
+docker run --rm -v vol_tpfinal:/etc/todos/ -v .:/backup leandrocolocdk/tpidepba:2.0 tar czf /backup/backup_data_vol.tar.gz -C /etc/todos/ .
+
+
+
+docker run --rm -v vol_tpfinal:/etc/todos/ -v ./volumen_data:/backup alpine tar czf /backup/backup_data_vol.tar.gz -C /etc/todos/ .
+
+
+eliminamos el volumen creado 
+docker volume rm vol_tpfinal
+
+
+creamos un volumen nuevo para montar el backup
+docker volume create restored_vol
+
+
+Ejecutamos un contenedor temporal para guardar los datos en el volumen
+
+docker run --rm -v restored_vol:/data -v .:/backup alpine sh -c "tar xzf /backup/backup_data_vol.tar.gz -C /data"
+docker run --rm -v restored_vol:/etc/todos/ -v .:/backup leandrocolocdk/tpidepba:2.0 sh -c "tar xzf /backup/backup_data_vol.tar.gz -C /data"
+docker run --rm -v data_vol:/data -v .:/backup alpine tar czf /backup/backup_data_vol.tar.gz -C /data .
+
+descomprimimos en /etc/todos/
+docker run --rm -v restored_vol:/etc/todos/ -v .:/backup leandrocolocdk/tpidepba:2.0 sh -c "tar xzf /backup/backup_data_vol.tar.gz -C /etc/todos/"
+
+docker run -it --name contenedor-tpfinal -p 3000:3000 -v restored_vol:/etc/todos/ leandrocolocdk/tpidepba:2.0
+
+una vez generado el tar lo descomprimo en volumen_data, que me quede el volumen.db
+
+docker run --rm -v restored_vol:/etc/todos/ --name contenedor-tpfinal -p 3000:3000 leandrocolocdk/tpidepba:2.0
+--------------
+de nuevo probamos 
+mkdir datos_binds_mounts
+
+docker run -it --name contenedor-tpfinal -p 3000:3000 -v /datos_binds_mounts:/etc/todos/ leandrocolocdk/tpidepba:2.0
+
+
+
+
+redes 
+
+creamos otro contenedor con una imagen de mysql8
+docker run --name todos -e MYSQL_ROOT_PASSWORD=secret-todos -e MYSQL_DATABASE=todos -d mysql:8.0
+
+
+
+creamos el volumen
+docker volume create todo-mysql-data
+
+docker network create -d bridge mi_red_bridge_tp
+
+
+con volumen y con la red 
+docker run -d --name contenedor-mysql --network mi_red_bridge_tp --network-alias mysql -v todo-mysql-data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=secret-todos -e MYSQL_DATABASE=todos mysql:8.0
+
+
+--network-alias mysql
+otros conenedores pueden utilizarlo usando mysql de nombre al host
+
+
+
+ docker exec -it <mysql-container-id> mysql -u root -p
+ docker exec -it dreamy_thompson mysql -u root -p
+
+
+ingresamos la contraseña secret-todos
+
+
+la aplicacion
+docker run -it --name contenedor-tpfinal -p 3000:3000 -v todo-mysql-data:/var/lib/mysql leandrocolocdk/tpidepba:2.0
+
+
+me falta setear las variables de entorno para que se conecte a mysql 
+if (process.env.MYSQL_HOST) module.exports = require('./mysql');
+else module.exports = require('./sqlite');
+
+
+lo tengo que conectar a la red 
+docker run -it --name contenedor-tpfinal -p 3000:3000  --network mi_red_bridge_tp -v todo-mysql-data:/var/lib/mysql -e MYSQL_HOST=contenedor-mysql -e MYSQL_USER=root -e MYSQL_PASSWORD=secret-todos -e MYSQL_DB=todos leandrocolocdk/tpidepba:2.0
+
+
+
+
+
+ya con eel docker composee armado levantamos la app.
+docker compose up
+
+y la bajamos
+docker compose down 

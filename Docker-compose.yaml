@@ -1,0 +1,39 @@
+name: tpfinal
+services:
+    tpidepba:
+      stdin_open: true
+      tty: true
+      container_name: contenedor-tpfinal
+      ports:
+          - 3000:3000
+      networks:
+          - mi_red_bridge_tp
+      volumes:
+          - todo-mysql-data:/var/lib/mysql
+      environment:
+          - MYSQL_HOST=contenedor-mysql
+          - MYSQL_USER=root
+          - MYSQL_PASSWORD=secret-todos
+          - MYSQL_DB=todos
+      image: leandrocolocdk/tpidepba:2.0
+    mysql:
+      container_name: contenedor-mysql
+      networks:
+          mi_red_bridge_tp:
+              aliases:
+                  - mysql
+      volumes:
+          - todo-mysql-data:/var/lib/mysql
+          # - ./todo-mysql-data:/var/lib/mysql
+      environment:
+          - MYSQL_ROOT_PASSWORD=secret-todos
+          - MYSQL_DATABASE=todos
+      image: mysql:8.0
+networks:
+  mi_red_bridge_tp:
+    external: true
+    name: mi_red_bridge_tp
+volumes:
+  todo-mysql-data:
+    external: true
+    name: todo-mysql-data
